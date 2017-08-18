@@ -1,0 +1,39 @@
+version: '2'
+services:
+  db:
+    container_name: auth_db
+    image: postgres:9.6.2-alpine
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+
+  server:
+    container_name: auth_server
+    build:
+      context: ./server
+      args:
+        username: ${WILDFLY_USERNAME}
+        password: ${WILDFLY_PASSWORD}
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${SERVER_PORT_WEB}:8080"
+      - "${SERVER_PORT_ADMIN}:9990"
+      - "${SERVER_PORT_DEBUG}:8787"
+    expose:
+      - 8787
+    command: /opt/jboss/wildfly/bin/standalone.sh --debug -b=0.0.0.0 -bmanagement=0.0.0.0
+    volumes:
+      - "~/logs/wildfly/auth:/opt/jboss/wildfly/standalone/log"
+    depends_on:
+      - db
+
+volumes:
+  auth_postgres_data:
